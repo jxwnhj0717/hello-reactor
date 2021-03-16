@@ -132,3 +132,24 @@ public interface Processor<T, R> extends Subscriber<T>, Publisher<R> {
 1. publishOn()将MonoDefer对象包装成MonoPublishOn对象。
 2. 调用Mono.onSubscribe(Subscriber actual)，创建PublishOnSubscriber对象。
 3. 调用Subscriber.onNext(int i)时，执行PublishOnSubscriber.onNext()，将任务抛到Schedulers.parallel()执行，任务的逻辑是调用System.out.println(Thread.currentThread() + ": " + i)。
+
+
+
+## subscribeOn的实现
+
+示例：
+
+```java
+@Test void subscribeOn() {
+	Mono.defer(() -> Mono.just(1))
+    	.subscribeOn(Schedulers.parallel())
+        .subscribe(s -> System.out.println(Thread.currentThread() + ": " + s));
+}
+```
+
+执行流程：
+
+1. subscribeOn()将MonoDefer对象包装成MonoSubscribeOn对象。
+2. 调用Mono.onSubscribe(Subscriber actual)，MonoSubscribeOn.subscribeOrReturn()返回null。内部创建SubscribeOnSubscriber，源Publisher的逻辑在新的线程中执行。这一步实现了在Schedulers.parallel()线程上执行“() -> Mono.just(1)”。
+
+
